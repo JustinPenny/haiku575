@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Haiku 575</title>
+    <link rel="stylesheet" href="./index.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&family=Roboto:ital,wght@0,100..900;1,100..900&family=VT323&display=swap" rel="stylesheet">
+</head>
+<body>
+        <span id="banner">
+            <h1>HAIKU 575</h1>
+        </span>
+TODO: we wasted a ton of time on webpack and CDN for node packages but we finally got it working. Now I need to flesh out the front
+end so I can move on to making the back end and DB
+
+        <div class="section">
+            <details>
+                <summary>What is a Haiku?</summary>
+                <p>&nbsp;&nbsp; A Haiku is three-line poem in a 5-7-5 syllable structure.</p>
+                <p>&nbsp; Example:</p>
+                <p>&nbsp;&nbsp; The sun is overhead (5)</p>
+                <p>&nbsp;&nbsp; Laziness blisters the skin (7)</p>
+                <p>&nbsp;&nbsp; Next time wear a shirt (5)</p>
+
+            </details>
+        </div>
+
+        <div class="section">
+            write a haiku
+            <div>
+                <textarea id="firstLine"  placeholder="First Line"></textarea>
+            </div>
+            <div>
+                <textarea id="secondLine" placeholder="Second Line"></textarea>
+            </div>
+            <div>
+                <textarea id="thirdLine" placeholder="Third Line"></textarea>
+            </div>
+            <button id="checkButton">
+                Check
+            </button>
+            
+        </div>
+
+        <div class="section">
+            load a haiku from db
+        </div>
+
+        <div class="section">
+            generate a haiku??
+        </div>
+<script type="module">
+  import {syllable} from 'https://esm.sh/syllable@5?bundle'
+    
+    document.getElementById("checkButton").addEventListener("click", checkSyllableCount);
+
+function checkSyllableCount(){
+    const textarea1 = document.getElementById("firstLine");
+    const textValue1 = textarea1.value;
+    console.log(syllable(textValue1))
+
+    const textarea2 = document.getElementById("secondLine");
+    const textValue2 = textarea2.value;
+    console.log(syllable(textValue2))
+
+    const textarea3 = document.getElementById("thirdLine");
+    const textValue3 = textarea3.value;
+    console.log(syllable(textValue3))}
+
+    
+</script>
+
+
+</body>
+</html>
