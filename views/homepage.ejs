@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Haiku 575</title>
+    <link rel="stylesheet" href="/index.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&family=Roboto:ital,wght@0,100..900;1,100..900&family=VT323&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header>
+        <h1>HAIKU 575</h1>
+    </header>
+TODO: building backend via https://www.youtube.com/watch?v=1oTuMPIwHmk currently setting up routing via express
+
+        <div class="section">
+            <details>
+                <summary>What is a Haiku?</summary>
+                <p>&nbsp;&nbsp; A Haiku is three-line poem in a 5-7-5 syllable structure.</p>
+                <p>&nbsp; Example:</p>
+                <p>&nbsp;&nbsp; The sun is overhead (5)</p>
+                <p>&nbsp;&nbsp; Laziness blisters the skin (7)</p>
+                <p>&nbsp;&nbsp; Next time wear a shirt (5)</p>
+
+            </details>
+        </div>
+    <main>
+
+        <div class="section">
+            <form action="/submit" method="POST">
+                <fieldset>
+                    <legend> Write A Haiku</legend>
+
+                        <textarea id="firstLine"  placeholder="Write some words in" spellcheck="true" contenteditable="true"  name="lineOne"></textarea>
+                        <span class="lineCheck" id="firstLineCount">0/5</span>
+
+                        <textarea id="secondLine" placeholder="These spaces to create your" spellcheck="true" name="lineTwo"></textarea>
+                        <span class="lineCheck" id="secondLineCount">0/7</span>
+                        
+                        <textarea id="thirdLine" placeholder="Very own haiku poem" spellcheck="true" name="lineThree"></textarea>
+                        <span class="lineCheck" id="thirdLineCount">0/5</span>
+                    <button id="submitButton">
+                        SUBMIT
+                    </button>
+                </fieldset>
+            </form>
+            
+        </div>
+
+        <div class="section">
+            load a haiku from db
+        </div>
+
+        <div class="section">
+            generate a haiku??
+        </div>
+    </main>
+<script type="module">
+    import {syllable} from 'https://esm.sh/syllable@5?bundle'
+
+
+    // Check if the written haiku is the correct syllable length as it's typed
+    // Syllable appears to work with special characters. We will need to sanitize them backend
+    // Change the syllable count to green or red to inform length
+    const textAreaOne = document.getElementById('firstLine');
+    const textAreaOneCount = document.getElementById('firstLineCount');
+
+    const textAreaTwo = document.getElementById('secondLine');
+    const textAreaTwoCount = document.getElementById('secondLineCount');
+
+    const textAreaThree = document.getElementById('thirdLine');
+    const textAreaThreeCount = document.getElementById('thirdLineCount');
+
+    function syllableColor(syllableCount, limit){
+        if(syllableCount < limit){
+             return "white";
+        }
+        else if (syllableCount === limit){
+            return "green";
+        }
+        else if (syllableCount > limit){
+            return "red";
+        }
+    }
+
+    textAreaOne.addEventListener('input', function() {
+        const currentValueOne = textAreaOne.value;
+        const limit = 5;
+        var syllableCount = syllable(currentValueOne);
+        textAreaOneCount.textContent = syllableCount + "/5";
+        textAreaOneCount.style.color = syllableColor(syllableCount, limit);
+
+    })
+    textAreaTwo.addEventListener('input', function() {
+        const currentValueTwo = textAreaTwo.value;
+        const limit = 7;
+        var syllableCount = syllable(currentValueTwo);
+        textAreaTwoCount.textContent = syllableCount + "/7";
+        textAreaTwoCount.style.color = syllableColor(syllableCount, limit);
+    })
+    textAreaThree.addEventListener('input', function() {
+        const currentValueThree = textAreaThree.value;
+        const limit = 5;
+        var syllableCount = syllable(currentValueThree);
+        textAreaThreeCount.textContent = syllableCount + "/5";
+        textAreaThreeCount.style.color = syllableColor(syllableCount, limit);
+    })
+    
+</script>
+</body>
+</html>
