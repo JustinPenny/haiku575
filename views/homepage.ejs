@@ -28,6 +28,11 @@ TODO: building backend via https://www.youtube.com/watch?v=1oTuMPIwHmk currently
 
         <div class="section">
             <form action="/submit" method="POST">
+                
+                <!-- % indicates raw js via ejs -->
+                <% errors.forEach(error => { %>
+                    <p class="notice"><%= error %></p>
+                <%}) %>
                 <fieldset>
                     <legend> Write A Haiku</legend>
 
