@@ -88,10 +88,22 @@ app.post("/submit", (req, res) => {
         maxAge: 1000 * 60 * 60 * 24, // cookie is good for 1 day
     })
 
+    // look up info from our db
+    //const lookupStatement = db.prepare("SELECT EXISTS(SELECT 1 FROM poems WHERE haikuId = "+haikuHash+")")
+    const lookupStatement = db.prepare("SELECT count(*) FROM poems WHERE haikuId=?") 
+    console.log(lookupStatement.get(lookupStatement, haikuHash));
+    
+    /*db.all(): Retrieves all rows matching the query.
+    db.get(): Retrieves only the first matching row.
+    db.run(): Executes SQL commands that do not return rows, such as CREATE, INSERT, or UPDATE.
+    db.each(): Executes a callback function for each row returned. */
+
     // save entry into the db
     const dbStatement = db.prepare("INSERT INTO poems (lineOne, lineTwo, lineThree, author, haikuId) VALUES(?, ?, ?, ?, ?)");
     dbStatement.run(req.body.lineOne, req.body.lineTwo, req.body.lineThree, authorHash, haikuHash);
     res.send("SUBMITTED")
+
+
 
 
 

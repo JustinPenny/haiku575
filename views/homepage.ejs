@@ -13,6 +13,8 @@
     </header>
 TODO: building backend via https://www.youtube.com/watch?v=1oTuMPIwHmk currently setting up routing via express
 
+<p></p>DO i need a submit page? Would like to keep the submissions in the text field and the layout doesn't change
+
         <div class="section">
             <details>
                 <summary>What is a Haiku?</summary>
@@ -44,9 +46,16 @@ TODO: building backend via https://www.youtube.com/watch?v=1oTuMPIwHmk currently
                         
                         <textarea id="thirdLine" placeholder="Very own haiku poem" spellcheck="true" name="lineThree"></textarea>
                         <span class="lineCheck" id="thirdLineCount">0/5</span>
-                    <button id="submitButton">
-                        SUBMIT
-                    </button>
+                    
+                    <span>
+                        <button id="submitButton">
+                            SUBMIT
+                        </button>
+
+                        <button id ="clearButton" type="reset">
+                            CLEAR
+                        </button>
+                    </span>
                 </fieldset>
             </form>
             
@@ -110,7 +119,6 @@ TODO: building backend via https://www.youtube.com/watch?v=1oTuMPIwHmk currently
         textAreaThreeCount.textContent = syllableCount + "/5";
         textAreaThreeCount.style.color = syllableColor(syllableCount, limit);
     })
-    
 </script>
 </body>
 </html>
