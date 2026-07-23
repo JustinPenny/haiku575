@@ -24,6 +24,16 @@ body {
 
 h1{
     font-size: 15;
+    transition: background-color 0.3s ease;
+}
+
+h1:hover {
+    color:darkcyan;
+
+}
+
+#header_space{
+    padding-right: 10px;
 }
 
 legend {
@@ -57,6 +67,11 @@ textarea {
     width: 30vw;
 
     font-size:x-large;
+
+    transition: background-color 0.3s ease;
+}
+textarea:hover{
+    background-color:darkcyan;
 }
 
 details{
@@ -66,7 +81,7 @@ details{
 button {
     border: solid;
     cursor: pointer;
-    height:5vh;
+    height:7vh;
     width: 10vw;
     font-size: x-large;
     padding: auto;
@@ -102,4 +117,83 @@ button {
 
 .lineCheck{
     padding-left: 5px;
+}
+
+#formErrors.has-errors {
+    background-color: rgba(255, 0, 0, 0.15);
+    border: 1px solid rgb(255, 90, 90);
+    padding: 8px 12px;
+    margin-bottom: 10px;
+    width: fit-content;
+}
+
+.popup {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translate(-50%, -20px);
+
+    display: flex;
+    align-items: center;
+    gap: 15px;
+
+    background-color: rgb(14, 14, 14);
+    color: #F5F5F5;
+    border: solid #F5F5F5;
+
+    padding: 10px 15px 10px 20px;
+    font-size: x-large;
+
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+
+    z-index: 100;
+}
+
+.popup.show {
+    opacity: 1;
+    transform: translate(-50%, 0);
+    pointer-events: auto;
+}
+
+#popupClose {
+    background: none;
+    border: none;
+    color: #F5F5F5;
+    font-size: x-large;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0;
+}
+
+@media (max-width: 600px) {
+    div.section {
+        padding-left: 4vw;
+        padding-bottom: 6vh;
+    }
+
+    fieldset {
+        width: 90%;
+    }
+
+    textarea,
+    #firstLine,
+    #secondLine,
+    #thirdLine {
+        width: 85%;
+    }
+
+    fieldset > span {
+        display: flex;
+        gap: 10px;
+        width: 100%;
+    }
+
+    button {
+        width: auto;
+        flex: 1;
+        height: auto;
+        padding: 10px 0;
+    }
 }

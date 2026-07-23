@@ -1,5 +1,9 @@
 "# haiku575" 
 
+testing on localhost:3000
+be sure to npm run dev to get the server running
+use db browser tool to check the haiku575.db file
+
 -PACKAGES
 express for routing
 nodemon for refreshing node via 'npm run dev'

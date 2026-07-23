@@ -1,6 +1,7 @@
 const express = require("express");
 const { syllable } = require("syllable");
 const { Hashery } = require("hashery");
+const path = require('path');
 const db = require("better-sqlite3")("haiku575.db");
 db.pragma("journal_mode = WAL");
 const app = express();
@@ -23,7 +24,10 @@ createTables();
 app.set("view engine", "ejs");
 app.set('trust proxy', true);
 app.use(express.urlencoded({extended:false}));
-app.use(express.static("public"));
+//app.use(express.static("public"));
+app.use(express.static(path.join(__dirname, 'public')));
+
+
 
 // example of middleware, research this more
 app.use(function (req, res, next){
@@ -32,6 +36,19 @@ app.use(function (req, res, next){
     res.locals.errors = [];
     next();
 })
+
+app.use((req, res, next) => {
+  res.setHeader(
+    "Content-Security-Policy",
+    [
+      "img-src 'self'",
+      "script-src 'self' 'unsafe-inline' https://esm.sh",
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+      "font-src 'self' https://fonts.gstatic.com",
+    ].join("; ")
+  );
+  next();
+});
 
 app.get("/", (req, res) => {
     res.render("homepage");
@@ -71,8 +88,8 @@ app.post("/submit", (req, res) => {
     if (req.body.lineThree && !req.body.lineThree.match(/^([a-zA-Z ']*)$/)) errors.push("Entries can only contain letters and apostrophes. [Line Three]");
 
     if (errors.length){
-        return res.render("homepage", {errors});
-    } 
+        return res.status(400).json({errors});
+    }
 
     // generate unique has id for each poem
     const lineOneHash = hashery.toHashSync(req.body.lineOne);
@@ -89,19 +106,17 @@ app.post("/submit", (req, res) => {
     })
 
     // look up info from our db
-    //const lookupStatement = db.prepare("SELECT EXISTS(SELECT 1 FROM poems WHERE haikuId = "+haikuHash+")")
-    const lookupStatement = db.prepare("SELECT count(*) FROM poems WHERE haikuId=?") 
-    console.log(lookupStatement.get(lookupStatement, haikuHash));
-    
-    /*db.all(): Retrieves all rows matching the query.
-    db.get(): Retrieves only the first matching row.
-    db.run(): Executes SQL commands that do not return rows, such as CREATE, INSERT, or UPDATE.
-    db.each(): Executes a callback function for each row returned. */
+    const lookupStatement = db.prepare("SELECT count(*) AS count FROM poems WHERE haikuId=?")
+    const row = lookupStatement.get(haikuHash)
 
-    // save entry into the db
-    const dbStatement = db.prepare("INSERT INTO poems (lineOne, lineTwo, lineThree, author, haikuId) VALUES(?, ?, ?, ?, ?)");
-    dbStatement.run(req.body.lineOne, req.body.lineTwo, req.body.lineThree, authorHash, haikuHash);
-    res.send("SUBMITTED")
+    if (row.count < 1){
+        // save entry into the db
+        const dbStatement = db.prepare("INSERT INTO poems (lineOne, lineTwo, lineThree, author, haikuId) VALUES(?, ?, ?, ?, ?)");
+        dbStatement.run(req.body.lineOne, req.body.lineTwo, req.body.lineThree, authorHash, haikuHash);
+        return res.json({success: true});
+    }
+
+    return res.status(409).json({errors: ["This haiku has already been submitted."]});
 
 
 

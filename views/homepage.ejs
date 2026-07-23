@@ -1,40 +1,60 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Haiku 575</title>
     <link rel="stylesheet" href="/index.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&family=Roboto:ital,wght@0,100..900;1,100..900&family=VT323&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
 </head>
 <body>
     <header>
-        <h1>HAIKU 575</h1>
+        <h1>H</h1>
+        <h1>A</h1>
+        <h1>I</h1>
+        <h1>K</h1>
+        <h1 id="header_space">U</h1>
+        <h1>5</h1>
+        <h1>7</h1>
+        <h1>5</h1>
     </header>
-TODO: building backend via https://www.youtube.com/watch?v=1oTuMPIwHmk currently setting up routing via express
 
-<p></p>DO i need a submit page? Would like to keep the submissions in the text field and the layout doesn't change
+    <div id="successPopup" class="popup">
+        <span>Haiku submitted!</span>
+        <button id="popupClose" type="button" aria-label="Close">&times;</button>
+    </div>
+TODO: building backend via https://www.youtube.com/watch?v=1oTuMPIwHmk currently setting up routing via express
 
         <div class="section">
             <details>
-                <summary>What is a Haiku?</summary>
-                <p>&nbsp;&nbsp; A Haiku is three-line poem in a 5-7-5 syllable structure.</p>
+                <summary> What is a Haiku? </summary>
+                <p>&nbsp;&nbsp;&#8226; A Haiku is three-line poem in a 5-7-5 syllable structure.</p>
                 <p>&nbsp; Example:</p>
-                <p>&nbsp;&nbsp; The sun is overhead (5)</p>
-                <p>&nbsp;&nbsp; Laziness blisters the skin (7)</p>
-                <p>&nbsp;&nbsp; Next time wear a shirt (5)</p>
+                <p>&nbsp;&nbsp;&#8226; The sun is overhead (5)</p>
+                <p>&nbsp;&nbsp;&#8226; Laziness blisters the skin (7)</p>
+                <p>&nbsp;&nbsp;&#8226; Next time wear a shirt (5)</p>
 
+            </details>
+            <details>
+                <summary> Haiku Tips</summary>
+                <p>&nbsp;&#8226; Haikus do not typically use rhyming words</p>
+                <p>&nbsp;&#8226; Classic Haikus focus on nature or sensory observations</p>
+                <p>&nbsp;&#8226; Traditionally haikus feature a 'cutting word' that divides the poem into two distinct ideas</p>
             </details>
         </div>
     <main>
 
         <div class="section">
-            <form action="/submit" method="POST">
-                
+            <form id="haikuForm" action="/submit" method="POST">
+
                 <!-- % indicates raw js via ejs -->
-                <% errors.forEach(error => { %>
-                    <p class="notice"><%= error %></p>
-                <%}) %>
+                <div id="formErrors" class="<%= errors.length ? 'has-errors' : '' %>">
+                    <% errors.forEach(error => { %>
+                        <p class="notice"><%= error %></p>
+                    <%}) %>
+                </div>
                 <fieldset>
                     <legend> Write A Haiku</legend>
 
@@ -119,6 +139,61 @@ TODO: building backend via https://www.youtube.com/watch?v=1oTuMPIwHmk currently
         textAreaThreeCount.textContent = syllableCount + "/5";
         textAreaThreeCount.style.color = syllableColor(syllableCount, limit);
     })
+
+    // Submit the haiku via fetch so the page never navigates away
+    const haikuForm = document.getElementById('haikuForm');
+    const formErrors = document.getElementById('formErrors');
+
+    function renderErrors(errors) {
+        formErrors.innerHTML = '';
+        formErrors.classList.toggle('has-errors', errors.length > 0);
+        errors.forEach(function (error) {
+            const p = document.createElement('p');
+            p.className = 'notice';
+            p.textContent = error;
+            formErrors.appendChild(p);
+        });
+    }
+
+    function resetCounts() {
+        textAreaOneCount.textContent = '0/5';
+        textAreaOneCount.style.color = 'white';
+        textAreaTwoCount.textContent = '0/7';
+        textAreaTwoCount.style.color = 'white';
+        textAreaThreeCount.textContent = '0/5';
+        textAreaThreeCount.style.color = 'white';
+    }
+
+    haikuForm.addEventListener('submit', async function (e) {
+        e.preventDefault();
+
+        const response = await fetch('/submit', {
+            method: 'POST',
+            body: new URLSearchParams(new FormData(haikuForm)),
+        });
+        const data = await response.json();
+
+        renderErrors(data.errors || []);
+
+        // add support for submission failure here
+        if (data.success) {
+            haikuForm.reset();
+            resetCounts();
+            showSuccessPopup();
+        }
+    });
+
+    const successPopup = document.getElementById('successPopup');
+    const popupClose = document.getElementById('popupClose');
+
+
+    function showSuccessPopup() {
+        successPopup.classList.add('show');
+    }
+
+    popupClose.addEventListener('click', function () {
+        successPopup.classList.remove('show');
+    });
 </script>
 </body>
 </html>
