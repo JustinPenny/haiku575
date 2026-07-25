@@ -6,6 +6,71 @@ const db = require("better-sqlite3")("haiku575.db");
 db.pragma("journal_mode = WAL");
 const app = express();
 
+// generate setup start - bucket the word bank by syllable count once at startup,
+// so /generate can pick words that fit a line's remaining syllable budget quickly
+const wordBank = require('./wordbank.json');
+
+const syllableBuckets = (function () {
+    const buckets = {};
+    wordBank.forEach(function (word) {
+        const count = syllable(word);
+        if (count < 1) return; // skip anything the estimator couldn't parse
+        if (!buckets[count]) buckets[count] = [];
+        buckets[count].push(word);
+    });
+    return buckets;
+})();
+
+function pickRandom(arr) {
+    return arr[Math.floor(Math.random() * arr.length)];
+}
+
+// assembles one line by repeatedly picking a random word whose syllable count
+// fits what's left, until the target is hit exactly. Retries the whole line a
+// few times in case it paints itself into a corner (e.g. 1 syllable left, no
+// word available to close the gap).
+function buildLine(targetSyllables, maxAttempts) {
+    maxAttempts = maxAttempts || 50;
+
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        const words = [];
+        let remaining = targetSyllables;
+        let stuck = false;
+
+        while (remaining > 0) {
+            const availableCounts = Object.keys(syllableBuckets)
+                .map(Number)
+                .filter(function (count) { return count <= remaining && syllableBuckets[count].length; });
+
+            if (!availableCounts.length) {
+                stuck = true;
+                break;
+            }
+
+            const chosenCount = pickRandom(availableCounts);
+            words.push(pickRandom(syllableBuckets[chosenCount]));
+            remaining -= chosenCount;
+        }
+
+        if (!stuck && remaining === 0) {
+            return words.join(' ');
+        }
+    }
+
+    return null;
+}
+
+function generateHaiku() {
+    const lineOne = buildLine(5);
+    const lineTwo = buildLine(7);
+    const lineThree = buildLine(5);
+
+    if (!lineOne || !lineTwo || !lineThree) return null;
+
+    return { lineOne, lineTwo, lineThree };
+}
+// generate setup end
+
 // db setup start
 const createTables = db.transaction(() =>{
     db.prepare(`
@@ -188,6 +253,21 @@ app.delete("/delete/:haikuId", (req, res) => {
     }
 
     return res.json({success: true});
+});
+
+app.get("/generate", (req, res) => {
+    const haiku = generateHaiku();
+
+    if (!haiku) {
+        return res.status(500).json({success: false, errors: ["Couldn't generate a haiku right now — try again."]});
+    }
+
+    return res.json({
+        success: true,
+        lineOne: haiku.lineOne,
+        lineTwo: haiku.lineTwo,
+        lineThree: haiku.lineThree
+    });
 });
 
 app.listen(3000);

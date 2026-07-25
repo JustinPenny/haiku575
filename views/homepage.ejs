@@ -11,19 +11,30 @@
 </head>
 <body>
     <header>
-        <h1>H</h1>
-        <h1>A</h1>
-        <h1>I</h1>
-        <h1>K</h1>
-        <h1 id="header_space">U</h1>
-        <h1>5</h1>
-        <h1>7</h1>
-        <h1>5</h1>
+        <h1 class="siteTitle" aria-label="Haiku 575">
+            <span class="word">
+                <span class="letter" aria-hidden="true">H</span><span class="letter" aria-hidden="true">A</span><span class="letter" aria-hidden="true">I</span><span class="letter" aria-hidden="true">K</span><span class="letter" aria-hidden="true">U</span>
+            </span>
+            <span class="word">
+                <span class="letter" aria-hidden="true">5</span><span class="letter" aria-hidden="true">7</span><span class="letter" aria-hidden="true">5</span>
+            </span>
+        </h1>
+        <p class="tagline">Write, discover, and generate haikus.</p>
     </header>
 
     <div id="successPopup" class="popup">
         <span>Haiku submitted!</span>
         <button id="popupClose" type="button" aria-label="Close">&times;</button>
+    </div>
+
+    <div id="confirmModal" class="modalOverlay hidden">
+        <div class="modalBox">
+            <p id="confirmMessage"></p>
+            <span>
+                <button id="confirmYesButton" type="button" class="modalConfirmButton">YES</button>
+                <button id="confirmNoButton" type="button">CANCEL</button>
+            </span>
+        </div>
     </div>
 <!--TODO: building backend via https://www.youtube.com/watch?v=1oTuMPIwHmk currently setting up routing via express -->
 
@@ -111,16 +122,36 @@
                     <button id="loadButton">
                     LOAD
                     </button>
-
-                    <button id="deleteButton" type="button" class="hidden deleteButton">
-                    DELETE
-                    </button>
                 </span>
+
+                <button id="deleteButton" type="button" class="hidden deleteButton">
+                DELETE
+                </button>
             </fieldset>
         </div>
 
-        <div class="section">
-            generate a haiku??
+        <div class="section" id="generateSection">
+            <fieldset>
+                <button id="generateSpeakerButton" type="button" class="speakerButton" aria-label="Read haiku aloud">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                        <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                        <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+                    </svg>
+                </button>
+                <legend>Generate A Haiku</legend>
+                <div id="generateErrors"></div>
+                <blockquote id="generatedHaiku" class="haikuDisplay hidden">
+                    <p class="haikuLine" id="generateLineOne"></p>
+                    <p class="haikuLine" id="generateLineTwo"></p>
+                    <p class="haikuLine" id="generateLineThree"></p>
+                </blockquote>
+                <span>
+                    <button id="generateButton">
+                    GENERATE
+                    </button>
+                </span>
+            </fieldset>
         </div>
     </main>
 <script type="module">
@@ -253,8 +284,18 @@
         deleteButton.classList.add('hidden');
     }
 
+    const LOAD_DEBOUNCE_MS = 1000;
+    let loadButtonLocked = false;
+
     loadButton.addEventListener('click', async function (e) {
         e.preventDefault();
+
+        // debounce - ignore clicks while the button is locked, unlock after the delay
+        if (loadButtonLocked) return;
+        loadButtonLocked = true;
+        setTimeout(function () {
+            loadButtonLocked = false;
+        }, LOAD_DEBOUNCE_MS);
 
         const response = await fetch ('/load', {
             method: 'GET'
@@ -273,8 +314,11 @@
         const haikuId = loadHaiku.dataset.haikuId;
         if (!haikuId) return;
 
-        const confirmed = confirm('Are you sure you want to delete this haiku? This cannot be undone.');
+        const confirmed = await showConfirm('Are you sure you want to delete this haiku? This cannot be undone.');
         if (!confirmed) return;
+
+        const superDuperConfirmed = await showConfirm('Are you super duper sure?');
+        if (!superDuperConfirmed) return;
 
         const response = await fetch('/delete/' + encodeURIComponent(haikuId), {
             method: 'DELETE'
@@ -292,15 +336,59 @@
 
 
 
+    // VVVVVVVVV GENERATE CODE VVVVVVVVV
+    const generateAreaOne = document.getElementById('generateLineOne');
+    const generateAreaTwo = document.getElementById('generateLineTwo');
+    const generateAreaThree = document.getElementById('generateLineThree');
+    const generatedHaiku = document.getElementById('generatedHaiku');
+    const generateButton = document.getElementById('generateButton');
+    const generateErrors = document.getElementById('generateErrors');
+
+    function displayGeneratedHaiku(data) {
+        generateAreaOne.textContent = data.lineOne;
+        generateAreaTwo.textContent = data.lineTwo;
+        generateAreaThree.textContent = data.lineThree;
+
+        generatedHaiku.classList.remove('hidden');
+    }
+
+    const GENERATE_DEBOUNCE_MS = 1000;
+    let generateButtonLocked = false;
+
+    generateButton.addEventListener('click', async function (e) {
+        e.preventDefault();
+
+        // debounce, same as the load button - avoid hammering the server with random picks
+        if (generateButtonLocked) return;
+        generateButtonLocked = true;
+        setTimeout(function () {
+            generateButtonLocked = false;
+        }, GENERATE_DEBOUNCE_MS);
+
+        const response = await fetch('/generate', {
+            method: 'GET'
+        });
+        const data = await response.json();
+
+        renderErrors(generateErrors, data.errors || []);
+
+        if (data.success) {
+            displayGeneratedHaiku(data);
+        }
+    });
+    // ^^^^^^^^^ GENERATE CODE ^^^^^^^^^^
+
+
+
     // VVVVVVVVV TEXT TO SPEECH CODE VVVVVVVVV
     const LINE_PAUSE_MS = 700;
 
     // native <textarea> elements can't contain markup, so word-by-word highlighting
     // isn't possible there - those fall back to a whole-box highlight instead
     const containerHighlightElements = [textAreaOne, textAreaTwo, textAreaThree];
-    // the loaded haiku is plain <p> tags we control, so we can wrap each word in
-    // its own <span> and highlight them one at a time as speech reaches them
-    const wordHighlightElements = [loadAreaOne, loadAreaTwo, loadAreaThree];
+    // the loaded/generated haikus are plain <p> tags we control, so we can wrap
+    // each word in its own <span> and highlight them one at a time as speech reaches them
+    const wordHighlightElements = [loadAreaOne, loadAreaTwo, loadAreaThree, generateAreaOne, generateAreaTwo, generateAreaThree];
 
     function clearWordHighlight(el) {
         el.querySelectorAll('.speaking-word').forEach(function (span) {
@@ -396,6 +484,15 @@
             { text: loadAreaThree.textContent, el: loadAreaThree, words: true },
         ]);
     });
+
+    const generateSpeakerButton = document.getElementById('generateSpeakerButton');
+    generateSpeakerButton.addEventListener('click', function () {
+        speakLines([
+            { text: generateAreaOne.textContent, el: generateAreaOne, words: true },
+            { text: generateAreaTwo.textContent, el: generateAreaTwo, words: true },
+            { text: generateAreaThree.textContent, el: generateAreaThree, words: true },
+        ]);
+    });
     // ^^^^^^^^^ TEXT TO SPEECH CODE ^^^^^^^^^^
 
 
@@ -406,6 +503,39 @@
     function showSuccessPopup() {
         successPopup.classList.add('show');
     }
+
+    // VVVVVVVVV CUSTOM CONFIRM MODAL CODE VVVVVVVVV
+    const confirmModal = document.getElementById('confirmModal');
+    const confirmMessage = document.getElementById('confirmMessage');
+    const confirmYesButton = document.getElementById('confirmYesButton');
+    const confirmNoButton = document.getElementById('confirmNoButton');
+
+    // shows the modal with the given message and resolves true/false based on
+    // which button (or the overlay, treated as cancel) the user clicks
+    function showConfirm(message) {
+        return new Promise(function (resolve) {
+            confirmMessage.textContent = message;
+            confirmModal.classList.remove('hidden');
+
+            function cleanup(result) {
+                confirmModal.classList.add('hidden');
+                confirmYesButton.removeEventListener('click', onYes);
+                confirmNoButton.removeEventListener('click', onNo);
+                confirmModal.removeEventListener('click', onOverlayClick);
+                resolve(result);
+            }
+            function onYes() { cleanup(true); }
+            function onNo() { cleanup(false); }
+            function onOverlayClick(e) {
+                if (e.target === confirmModal) cleanup(false);
+            }
+
+            confirmYesButton.addEventListener('click', onYes);
+            confirmNoButton.addEventListener('click', onNo);
+            confirmModal.addEventListener('click', onOverlayClick);
+        });
+    }
+    // ^^^^^^^^^ CUSTOM CONFIRM MODAL CODE ^^^^^^^^^^
 
     popupClose.addEventListener('click', function () {
         successPopup.classList.remove('show');
