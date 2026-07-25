@@ -14,8 +14,18 @@ const createTables = db.transaction(() =>{
         lineOne STRING NOT NULL,
         lineTwo STRING NOT NULL,
         lineThree STRING NOT NULL,
-        author STRING,
+        authorTag STRING,
+        authorName STRING,
         haikuId STRING NOT NULL)`).run()
+
+    // migrate an existing table created under the old schema (author -> authorTag, add authorName)
+    const columns = db.prepare("PRAGMA table_info(poems)").all().map(c => c.name);
+    if (columns.includes('author') && !columns.includes('authorTag')) {
+        db.prepare("ALTER TABLE poems RENAME COLUMN author TO authorTag").run();
+    }
+    if (!columns.includes('authorName')) {
+        db.prepare("ALTER TABLE poems ADD COLUMN authorName STRING").run();
+    }
 });
 
 createTables();
@@ -57,20 +67,22 @@ app.get("/", (req, res) => {
 app.post("/submit", (req, res) => {
     const errors = [];
 
-    // get the user ip and convert it to hash for unique author id
+    // get the user ip and convert it to hash for unique author tag
     const ip = req.ip;
     const hashery = new Hashery();
-    const authorHash = hashery.toHashSync(ip);
+    const authorTag = hashery.toHashSync(ip);
 
     // empty entry if it is not a string
     if (typeof req.body.lineOne !== "string") req.body.lineOne = "";
     if (typeof req.body.lineTwo !== "string") req.body.lineTwo = "";
     if (typeof req.body.lineThree !== "string") req.body.lineThree = "";
+    if (typeof req.body.authorName !== "string") req.body.authorName = "";
 
     // trim whitespace
     req.body.lineOne = req.body.lineOne.trim();
     req.body.lineTwo = req.body.lineTwo.trim();
     req.body.lineThree = req.body.lineThree.trim();
+    req.body.authorName = req.body.authorName.trim();
     
     // verify syllable count
     if (!req.body.lineOne) errors.push("Line One is empty.");
@@ -86,6 +98,7 @@ app.post("/submit", (req, res) => {
     if (req.body.lineOne && !req.body.lineOne.match(/^([a-zA-Z ']*)$/)) errors.push("Entries can only contain letters and apostrophes. [Line One]");
     if (req.body.lineTwo && !req.body.lineTwo.match(/^([a-zA-Z ']*)$/)) errors.push("Entries can only contain letters and apostrophes. [Line Two]");
     if (req.body.lineThree && !req.body.lineThree.match(/^([a-zA-Z ']*)$/)) errors.push("Entries can only contain letters and apostrophes. [Line Three]");
+    if (req.body.authorName && !req.body.authorName.match(/^([a-zA-Z ]*)$/)) errors.push("Author name can only contain letters and spaces.");
 
     if (errors.length){
         return res.status(400).json({errors});
@@ -97,7 +110,7 @@ app.post("/submit", (req, res) => {
     const lineThreeHash = hashery.toHashSync(req.body.lineThree);
     const haikuHash = lineOneHash + lineTwoHash + lineThreeHash;
 
-    // log the user in by giving them a cookie (change this to prevent dual submissions??)
+    // log the user in by giving them a cookie (change this prevent dual submissions??)
     res.cookie("submittedId", haikuHash, {
         httpOnly: true, // client side js cannot access cookies in browser
         secure: true, // browser will only send cookies over https
@@ -111,8 +124,8 @@ app.post("/submit", (req, res) => {
 
     if (row.count < 1){
         // save entry into the db
-        const dbStatement = db.prepare("INSERT INTO poems (lineOne, lineTwo, lineThree, author, haikuId) VALUES(?, ?, ?, ?, ?)");
-        dbStatement.run(req.body.lineOne, req.body.lineTwo, req.body.lineThree, authorHash, haikuHash);
+        const dbStatement = db.prepare("INSERT INTO poems (lineOne, lineTwo, lineThree, authorTag, authorName, haikuId) VALUES(?, ?, ?, ?, ?, ?)");
+        dbStatement.run(req.body.lineOne, req.body.lineTwo, req.body.lineThree, authorTag, req.body.authorName, haikuHash);
         return res.json({success: true});
     }
 
@@ -123,5 +136,58 @@ app.post("/submit", (req, res) => {
 
 
 })
+
+// tracks the haikuId of the last poem sent to /load, so the next call can avoid repeating it
+let lastLoadedHaikuId = null;
+
+app.get("/load", (req, res) => {
+    const countRow = db.prepare("SELECT count(*) AS count FROM poems").get();
+
+    if (countRow.count === 0) {
+        return res.status(404).json({success: false, errors: ["No haikus have been submitted yet."]});
+    }
+
+    if (countRow.count === 1) {
+        return res.status(409).json({success: false, errors: ["Only one haiku exists — submit another to enable loading."]});
+    }
+
+    // exclude the last loaded haiku so the same one can't come up twice in a row
+    const lookupStatement = lastLoadedHaikuId === null
+        ? db.prepare("SELECT * FROM poems ORDER BY RANDOM() LIMIT 1").get()
+        : db.prepare("SELECT * FROM poems WHERE haikuId != ? ORDER BY RANDOM() LIMIT 1").get(lastLoadedHaikuId);
+
+    lastLoadedHaikuId = lookupStatement.haikuId;
+
+    return res.json({
+        success: true,
+        haikuId: lookupStatement.haikuId,
+        lineOne: lookupStatement.lineOne,
+        lineTwo: lookupStatement.lineTwo,
+        lineThree: lookupStatement.lineThree,
+        authorTag: lookupStatement.authorTag,
+        authorName: lookupStatement.authorName
+    })
+});
+
+app.delete("/delete/:haikuId", (req, res) => {
+    const haikuId = req.params.haikuId;
+
+    const lookupStatement = db.prepare("SELECT count(*) AS count FROM poems WHERE haikuId=?")
+    const row = lookupStatement.get(haikuId)
+
+    if (row.count < 1){
+        return res.status(404).json({success: false, errors: ["That haiku no longer exists."]});
+    }
+
+    db.prepare("DELETE FROM poems WHERE haikuId=?").run(haikuId);
+
+    // if the deleted haiku was the one being excluded from repeats, clear that so
+    // the next /load isn't comparing against an id that no longer exists
+    if (lastLoadedHaikuId === haikuId) {
+        lastLoadedHaikuId = null;
+    }
+
+    return res.json({success: true});
+});
 
 app.listen(3000);

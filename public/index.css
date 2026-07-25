@@ -44,6 +44,7 @@ fieldset {
     display: flex;
     flex-direction: column;
     width:66%;
+    position: relative;
 }
 
 header {
@@ -78,6 +79,17 @@ details{
     cursor: pointer;
 }
 
+/* hanging indent so wrapped bullet text lines up under the text, not the bullet */
+.bullet-line {
+    padding-left: 4ch;
+    text-indent: -4ch;
+}
+
+.bullet-line-sm {
+    padding-left: 3ch;
+    text-indent: -3ch;
+}
+
 button {
     border: solid;
     cursor: pointer;
@@ -85,6 +97,47 @@ button {
     width: 10vw;
     font-size: x-large;
     padding: auto;
+}
+
+.deleteButton {
+    border-color: rgb(255, 90, 90);
+    color: rgb(255, 90, 90);
+}
+
+.speakerButton {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+
+    width: auto;
+    height: auto;
+
+    border: none;
+    background: none;
+    padding: 4px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    transition: opacity 0.2s ease;
+}
+
+.speakerButton:hover {
+    opacity: 0.6;
+}
+
+.speaking {
+    outline: 3px solid darkcyan;
+    background-color: rgba(0, 139, 139, 0.2);
+    transition: background-color 0.15s ease, outline-color 0.15s ease;
+}
+
+.speaking-word {
+    background-color: darkcyan;
+    color: #F5F5F5;
+    border-radius: 3px;
+    transition: background-color 0.1s ease;
 }
 
 #firstLine{
@@ -119,7 +172,29 @@ button {
     padding-left: 5px;
 }
 
-#formErrors.has-errors {
+.hidden {
+    display: none;
+}
+
+.haikuDisplay {
+    margin: 0;
+    padding: 0;
+    border-left: 3px solid #F5F5F5;
+    padding-left: 15px;
+}
+
+.haikuLine {
+    margin: 4px 0;
+}
+
+.haikuDisplay footer {
+    margin-top: 8px;
+    font-size: large;
+    color: gray;
+}
+
+#formErrors.has-errors,
+#loadErrors.has-errors {
     background-color: rgba(255, 0, 0, 0.15);
     border: 1px solid rgb(255, 90, 90);
     padding: 8px 12px;
