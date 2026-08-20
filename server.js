@@ -71,6 +71,42 @@ function generateHaiku() {
 }
 // generate setup end
 
+// rate limiting start - simple in-memory fixed-window limiter per IP, no
+// external dependency required. Swap for express-rate-limit if this ever
+// needs to run across multiple processes (this only tracks state in memory).
+function createRateLimiter(windowMs, max) {
+    const hits = new Map(); // ip -> { count, resetAt }
+
+    // periodically drop expired entries so `hits` doesn't grow forever
+    setInterval(function () {
+        const now = Date.now();
+        hits.forEach(function (entry, ip) {
+            if (now > entry.resetAt) hits.delete(ip);
+        });
+    }, windowMs).unref();
+
+    return function (req, res, next) {
+        const ip = req.ip;
+        const now = Date.now();
+        const entry = hits.get(ip);
+
+        if (!entry || now > entry.resetAt) {
+            hits.set(ip, { count: 1, resetAt: now + windowMs });
+            return next();
+        }
+
+        if (entry.count >= max) {
+            return res.status(429).json({success: false, errors: ["Too many requests — please slow down and try again shortly."]});
+        }
+
+        entry.count++;
+        next();
+    };
+}
+
+const apiLimiter = createRateLimiter(60 * 1000, 30); // 30 requests per minute per IP
+// rate limiting end
+
 // db setup start
 const createTables = db.transaction(() =>{
     db.prepare(`
@@ -91,13 +127,23 @@ const createTables = db.transaction(() =>{
     if (!columns.includes('authorName')) {
         db.prepare("ALTER TABLE poems ADD COLUMN authorName STRING").run();
     }
+
+    // speeds up the haikuId lookups every route does (submit's duplicate check,
+    // load's exclusion, delete's ownership check) and enforces uniqueness at
+    // the DB level instead of relying solely on the app-level check before insert
+    db.prepare("CREATE UNIQUE INDEX IF NOT EXISTS idx_poems_haikuId ON poems(haikuId)").run();
 });
 
 createTables();
 // db setup end
 
 app.set("view engine", "ejs");
-app.set('trust proxy', true);
+// trust only X-Forwarded-For headers set by a proxy running on the same
+// machine (Caddy/nginx/cloudflared) - since the app only binds to localhost
+// below, that's the only place a proxy hop can legitimately come from.
+// req.ip (used for rate limiting and the delete-ownership check) depends on
+// getting this right: 'true' would trust a spoofed header from anywhere.
+app.set('trust proxy', 'loopback');
 app.use(express.urlencoded({extended:false}));
 //app.use(express.static("public"));
 app.use(express.static(path.join(__dirname, 'public')));
@@ -117,7 +163,7 @@ app.use((req, res, next) => {
     "Content-Security-Policy",
     [
       "img-src 'self'",
-      "script-src 'self' 'unsafe-inline' https://esm.sh",
+      "script-src 'self' https://esm.sh",
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "font-src 'self' https://fonts.gstatic.com",
     ].join("; ")
@@ -129,7 +175,7 @@ app.get("/", (req, res) => {
     res.render("homepage");
 })
 
-app.post("/submit", (req, res) => {
+app.post("/submit", apiLimiter, (req, res) => {
     const errors = [];
 
     // get the user ip and convert it to hash for unique author tag
@@ -175,14 +221,6 @@ app.post("/submit", (req, res) => {
     const lineThreeHash = hashery.toHashSync(req.body.lineThree);
     const haikuHash = lineOneHash + lineTwoHash + lineThreeHash;
 
-    // log the user in by giving them a cookie (change this prevent dual submissions??)
-    res.cookie("submittedId", haikuHash, {
-        httpOnly: true, // client side js cannot access cookies in browser
-        secure: true, // browser will only send cookies over https
-        sameSite: "strict", // prevents cross site forgery attacks
-        maxAge: 1000 * 60 * 60 * 24, // cookie is good for 1 day
-    })
-
     // look up info from our db
     const lookupStatement = db.prepare("SELECT count(*) AS count FROM poems WHERE haikuId=?")
     const row = lookupStatement.get(haikuHash)
@@ -196,16 +234,12 @@ app.post("/submit", (req, res) => {
 
     return res.status(409).json({errors: ["This haiku has already been submitted."]});
 
-
-
-
-
 })
 
 // tracks the haikuId of the last poem sent to /load, so the next call can avoid repeating it
 let lastLoadedHaikuId = null;
 
-app.get("/load", (req, res) => {
+app.get("/load", apiLimiter, (req, res) => {
     const countRow = db.prepare("SELECT count(*) AS count FROM poems").get();
 
     if (countRow.count === 0) {
@@ -234,14 +268,22 @@ app.get("/load", (req, res) => {
     })
 });
 
-app.delete("/delete/:haikuId", (req, res) => {
+app.delete("/delete/:haikuId", apiLimiter, (req, res) => {
     const haikuId = req.params.haikuId;
 
-    const lookupStatement = db.prepare("SELECT count(*) AS count FROM poems WHERE haikuId=?")
+    // whoever is asking must be the same person (by IP hash) who submitted it
+    const hashery = new Hashery();
+    const requesterTag = hashery.toHashSync(req.ip);
+
+    const lookupStatement = db.prepare("SELECT authorTag FROM poems WHERE haikuId=?")
     const row = lookupStatement.get(haikuId)
 
-    if (row.count < 1){
+    if (!row){
         return res.status(404).json({success: false, errors: ["That haiku no longer exists."]});
+    }
+
+    if (row.authorTag !== requesterTag){
+        return res.status(403).json({success: false, errors: ["You can only delete haikus you submitted yourself."]});
     }
 
     db.prepare("DELETE FROM poems WHERE haikuId=?").run(haikuId);
@@ -255,7 +297,7 @@ app.delete("/delete/:haikuId", (req, res) => {
     return res.json({success: true});
 });
 
-app.get("/generate", (req, res) => {
+app.get("/generate", apiLimiter, (req, res) => {
     const haiku = generateHaiku();
 
     if (!haiku) {
@@ -270,4 +312,13 @@ app.get("/generate", (req, res) => {
     });
 });
 
-app.listen(3000);
+// binds to localhost only by default - a reverse proxy or cloudflared
+// (running on the same machine) is what should actually face the internet.
+// Override with HOST=0.0.0.0 if you need it reachable elsewhere on the LAN
+// (e.g. testing from another device) without a proxy in front.
+const PORT = process.env.PORT || 3000;
+const HOST = process.env.HOST || '127.0.0.1';
+
+app.listen(PORT, HOST, () => {
+    console.log(`Listening on http://${HOST}:${PORT}`);
+});

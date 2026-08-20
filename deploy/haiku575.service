@@ -1,0 +1,26 @@
+[Unit]
+Description=Haiku 575
+After=network.target
+
+[Service]
+Type=simple
+
+# EDIT THESE TWO LINES to match your actual username and where you cloned the repo on the Pi
+User=pi
+WorkingDirectory=/home/pi/haiku575
+
+ExecStart=/usr/bin/node server.js
+Restart=on-failure
+RestartSec=5
+
+Environment=NODE_ENV=production
+Environment=PORT=3000
+Environment=HOST=127.0.0.1
+
+# basic hardening - the service can't write outside its own project directory
+# (SQLite still needs to write there, so we don't use ProtectSystem=strict)
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

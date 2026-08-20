@@ -31,12 +31,13 @@
         <div class="modalBox">
             <p id="confirmMessage"></p>
             <span>
-                <button id="confirmYesButton" type="button" class="modalConfirmButton">YES</button>
+                <button id="confirmYesButton" type="button" class="destructive">YES</button>
                 <button id="confirmNoButton" type="button">CANCEL</button>
             </span>
         </div>
     </div>
-<!--TODO: building backend via https://www.youtube.com/watch?v=1oTuMPIwHmk currently setting up routing via express -->
+
+    <main>
 
         <div class="section">
             <details>
@@ -55,7 +56,6 @@
                 <p class="bullet-line-sm">&nbsp;&#8226; Traditionally haikus feature a 'cutting word' that divides the poem into two distinct ideas</p>
             </details>
         </div>
-    <main>
 
         <div class="section">
             <form id="haikuForm" action="/submit" method="POST">
@@ -68,15 +68,11 @@
                 </div>
                 <fieldset>
                     <button id="writeSpeakerButton" type="button" class="speakerButton" aria-label="Read haiku aloud">
-                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
-                            <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
-                            <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
-                        </svg>
+                        <%- include('partials/speaker-icon') %>
                     </button>
                     <legend> Write A Haiku</legend>
 
-                        <textarea id="firstLine"  placeholder="Write some words in" spellcheck="true" contenteditable="true"  name="lineOne"></textarea>
+                        <textarea id="firstLine"  placeholder="Write some words in" spellcheck="true" name="lineOne"></textarea>
                         <span class="lineCheck" id="firstLineCount">0/5</span>
 
                         <textarea id="secondLine" placeholder="These spaces to create your" spellcheck="true" name="lineTwo"></textarea>
@@ -98,17 +94,13 @@
                     </span>
                 </fieldset>
             </form>
-            
+
         </div>
 
-        <div class="section" id="loadSection" action="/load" method="GET">
+        <div class="section" id="loadSection">
             <fieldset>
                 <button id="loadSpeakerButton" type="button" class="speakerButton" aria-label="Read haiku aloud">
-                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
-                        <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
-                        <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
-                    </svg>
+                    <%- include('partials/speaker-icon') %>
                 </button>
                 <legend>Load A Haiku</legend>
                 <div id="loadErrors"></div>
@@ -124,7 +116,7 @@
                     </button>
                 </span>
 
-                <button id="deleteButton" type="button" class="hidden deleteButton">
+                <button id="deleteButton" type="button" class="hidden deleteButton destructive">
                 DELETE
                 </button>
             </fieldset>
@@ -133,11 +125,7 @@
         <div class="section" id="generateSection">
             <fieldset>
                 <button id="generateSpeakerButton" type="button" class="speakerButton" aria-label="Read haiku aloud">
-                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
-                        <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
-                        <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
-                    </svg>
+                    <%- include('partials/speaker-icon') %>
                 </button>
                 <legend>Generate A Haiku</legend>
                 <div id="generateErrors"></div>
@@ -154,392 +142,6 @@
             </fieldset>
         </div>
     </main>
-<script type="module">
-    import {syllable} from 'https://esm.sh/syllable@5?bundle'
-
-
-    // VVVVVVVVVV SUBMIT CODE VVVVVVVVVV
-    const textAreaOne = document.getElementById('firstLine');
-    const textAreaOneCount = document.getElementById('firstLineCount');
-
-    const textAreaTwo = document.getElementById('secondLine');
-    const textAreaTwoCount = document.getElementById('secondLineCount');
-
-    const textAreaThree = document.getElementById('thirdLine');
-    const textAreaThreeCount = document.getElementById('thirdLineCount');
-
-    function syllableColor(syllableCount, limit){
-        if(syllableCount < limit){
-             return "white";
-        }
-        else if (syllableCount === limit){
-            return "green";
-        }
-        else if (syllableCount > limit){
-            return "red";
-        }
-    }
-
-    textAreaOne.addEventListener('input', function() {
-        const currentValueOne = textAreaOne.value;
-        const limit = 5;
-        var syllableCount = syllable(currentValueOne);
-        textAreaOneCount.textContent = syllableCount + "/5";
-        textAreaOneCount.style.color = syllableColor(syllableCount, limit);
-
-    })
-    textAreaTwo.addEventListener('input', function() {
-        const currentValueTwo = textAreaTwo.value;
-        const limit = 7;
-        var syllableCount = syllable(currentValueTwo);
-        textAreaTwoCount.textContent = syllableCount + "/7";
-        textAreaTwoCount.style.color = syllableColor(syllableCount, limit);
-    })
-    textAreaThree.addEventListener('input', function() {
-        const currentValueThree = textAreaThree.value;
-        const limit = 5;
-        var syllableCount = syllable(currentValueThree);
-        textAreaThreeCount.textContent = syllableCount + "/5";
-        textAreaThreeCount.style.color = syllableColor(syllableCount, limit);
-    })
-
-    // Submit the haiku via fetch so the page never navigates away
-    const haikuForm = document.getElementById('haikuForm');
-    const formErrors = document.getElementById('formErrors');
-
-    function renderErrors(container, errors) {
-        container.innerHTML = '';
-        container.classList.toggle('has-errors', errors.length > 0);
-        errors.forEach(function (error) {
-            const p = document.createElement('p');
-            p.className = 'notice';
-            p.textContent = error;
-            container.appendChild(p);
-        });
-    }
-
-    function resetCounts() {
-        textAreaOneCount.textContent = '0/5';
-        textAreaOneCount.style.color = 'white';
-        textAreaTwoCount.textContent = '0/7';
-        textAreaTwoCount.style.color = 'white';
-        textAreaThreeCount.textContent = '0/5';
-        textAreaThreeCount.style.color = 'white';
-    }
-
-    haikuForm.addEventListener('submit', async function (e) {
-        // prevents page reload on submit
-        e.preventDefault();
-
-        const response = await fetch('/submit', {
-            method: 'POST',
-            body: new URLSearchParams(new FormData(haikuForm)),
-        });
-        const data = await response.json();
-
-        renderErrors(formErrors, data.errors || []);
-
-        // add support for submission failure here
-        if (data.success) {
-            haikuForm.reset();
-            resetCounts();
-            showSuccessPopup();
-        }
-    });
-    // ^^^^^^^ SUMIBT CODE ^^^^^^^^^^
-
-
-
-    // VVVVVVVVV LOAD CODE VVVVVVVVV
-    const loadAreaOne = document.getElementById('loadLineOne');
-    const loadAreaTwo = document.getElementById('loadLineTwo');
-    const loadAreaThree = document.getElementById('loadLineThree');
-    const loadHaiku = document.getElementById('loadHaiku');
-    const loadButton = document.getElementById('loadButton');
-    const loadAuthor = document.getElementById('loadAuthor');
-    const loadErrors = document.getElementById('loadErrors');
-    const deleteButton = document.getElementById('deleteButton');
-
-    function displayHaiku(data){
-        loadAreaOne.textContent = data.lineOne;
-        loadAreaTwo.textContent = data.lineTwo;
-        loadAreaThree.textContent = data.lineThree;
-
-        const authorName = data.authorName && data.authorName.trim() ? data.authorName : '(empty)';
-        loadAuthor.textContent = authorName + ' (' + data.authorTag + ')';
-
-        loadHaiku.dataset.haikuId = data.haikuId;
-        loadHaiku.classList.remove('hidden');
-        deleteButton.classList.remove('hidden');
-    }
-
-    function clearLoadedHaiku(){
-        loadAreaOne.textContent = '';
-        loadAreaTwo.textContent = '';
-        loadAreaThree.textContent = '';
-        loadAuthor.textContent = '';
-
-        loadHaiku.dataset.haikuId = '';
-        loadHaiku.classList.add('hidden');
-        deleteButton.classList.add('hidden');
-    }
-
-    const LOAD_DEBOUNCE_MS = 1000;
-    let loadButtonLocked = false;
-
-    loadButton.addEventListener('click', async function (e) {
-        e.preventDefault();
-
-        // debounce - ignore clicks while the button is locked, unlock after the delay
-        if (loadButtonLocked) return;
-        loadButtonLocked = true;
-        setTimeout(function () {
-            loadButtonLocked = false;
-        }, LOAD_DEBOUNCE_MS);
-
-        const response = await fetch ('/load', {
-            method: 'GET'
-        });
-        const data = await response.json();
-
-        renderErrors(loadErrors, data.errors || []);
-
-        if(data.success){
-            displayHaiku(data);
-        }
-
-    });
-
-    deleteButton.addEventListener('click', async function () {
-        const haikuId = loadHaiku.dataset.haikuId;
-        if (!haikuId) return;
-
-        const confirmed = await showConfirm('Are you sure you want to delete this haiku? This cannot be undone.');
-        if (!confirmed) return;
-
-        const superDuperConfirmed = await showConfirm('Are you super duper sure?');
-        if (!superDuperConfirmed) return;
-
-        const response = await fetch('/delete/' + encodeURIComponent(haikuId), {
-            method: 'DELETE'
-        });
-        const data = await response.json();
-
-        renderErrors(loadErrors, data.errors || []);
-
-        if (data.success) {
-            clearLoadedHaiku();
-        }
-    });
-
-    // ^^^^^^^^^ LOAD CODE ^^^^^^^^^^^
-
-
-
-    // VVVVVVVVV GENERATE CODE VVVVVVVVV
-    const generateAreaOne = document.getElementById('generateLineOne');
-    const generateAreaTwo = document.getElementById('generateLineTwo');
-    const generateAreaThree = document.getElementById('generateLineThree');
-    const generatedHaiku = document.getElementById('generatedHaiku');
-    const generateButton = document.getElementById('generateButton');
-    const generateErrors = document.getElementById('generateErrors');
-
-    function displayGeneratedHaiku(data) {
-        generateAreaOne.textContent = data.lineOne;
-        generateAreaTwo.textContent = data.lineTwo;
-        generateAreaThree.textContent = data.lineThree;
-
-        generatedHaiku.classList.remove('hidden');
-    }
-
-    const GENERATE_DEBOUNCE_MS = 1000;
-    let generateButtonLocked = false;
-
-    generateButton.addEventListener('click', async function (e) {
-        e.preventDefault();
-
-        // debounce, same as the load button - avoid hammering the server with random picks
-        if (generateButtonLocked) return;
-        generateButtonLocked = true;
-        setTimeout(function () {
-            generateButtonLocked = false;
-        }, GENERATE_DEBOUNCE_MS);
-
-        const response = await fetch('/generate', {
-            method: 'GET'
-        });
-        const data = await response.json();
-
-        renderErrors(generateErrors, data.errors || []);
-
-        if (data.success) {
-            displayGeneratedHaiku(data);
-        }
-    });
-    // ^^^^^^^^^ GENERATE CODE ^^^^^^^^^^
-
-
-
-    // VVVVVVVVV TEXT TO SPEECH CODE VVVVVVVVV
-    const LINE_PAUSE_MS = 700;
-
-    // native <textarea> elements can't contain markup, so word-by-word highlighting
-    // isn't possible there - those fall back to a whole-box highlight instead
-    const containerHighlightElements = [textAreaOne, textAreaTwo, textAreaThree];
-    // the loaded/generated haikus are plain <p> tags we control, so we can wrap
-    // each word in its own <span> and highlight them one at a time as speech reaches them
-    const wordHighlightElements = [loadAreaOne, loadAreaTwo, loadAreaThree, generateAreaOne, generateAreaTwo, generateAreaThree];
-
-    function clearWordHighlight(el) {
-        el.querySelectorAll('.speaking-word').forEach(function (span) {
-            span.classList.remove('speaking-word');
-        });
-    }
-
-    function clearHighlights() {
-        containerHighlightElements.forEach(function (el) {
-            el.classList.remove('speaking');
-        });
-        wordHighlightElements.forEach(clearWordHighlight);
-    }
-
-    function wrapWordsInSpans(el, text) {
-        el.innerHTML = '';
-        const words = text.split(/\s+/).filter(Boolean);
-        words.forEach(function (word, i) {
-            const span = document.createElement('span');
-            span.className = 'word';
-            span.textContent = word;
-            el.appendChild(span);
-            if (i < words.length - 1) el.appendChild(document.createTextNode(' '));
-        });
-        return el.querySelectorAll('span.word');
-    }
-
-    // entries: array of { text, el, words } - words: true means el supports
-    // word-span highlighting, otherwise el gets a whole-box highlight instead
-    function speakLines(entries) {
-        if (!('speechSynthesis' in window)) return;
-
-        const cleanEntries = entries
-            .map(function (entry) { return { text: entry.text.trim(), el: entry.el, words: entry.words }; })
-            .filter(function (entry) { return entry.text; });
-
-        if (!cleanEntries.length) return;
-
-        // stop anything currently being read before starting a new pass
-        speechSynthesis.cancel();
-        clearHighlights();
-
-        let index = 0;
-        function speakNext() {
-            if (index >= cleanEntries.length) {
-                clearHighlights();
-                return;
-            }
-
-            const entry = cleanEntries[index];
-            const utterance = new SpeechSynthesisUtterance(entry.text);
-            const wordSpans = entry.words ? wrapWordsInSpans(entry.el, entry.text) : null;
-            let wordPointer = 0;
-
-            utterance.onstart = function () {
-                if (!entry.words) entry.el.classList.add('speaking');
-            };
-            utterance.onboundary = function (event) {
-                if (!wordSpans || (event.name && event.name !== 'word')) return;
-                if (wordPointer > 0 && wordSpans[wordPointer - 1]) {
-                    wordSpans[wordPointer - 1].classList.remove('speaking-word');
-                }
-                if (wordSpans[wordPointer]) {
-                    wordSpans[wordPointer].classList.add('speaking-word');
-                }
-                wordPointer++;
-            };
-            utterance.onend = function () {
-                entry.el.classList.remove('speaking');
-                if (wordSpans) clearWordHighlight(entry.el);
-                index++;
-                setTimeout(speakNext, LINE_PAUSE_MS);
-            };
-            speechSynthesis.speak(utterance);
-        }
-        speakNext();
-    }
-
-    const writeSpeakerButton = document.getElementById('writeSpeakerButton');
-    writeSpeakerButton.addEventListener('click', function () {
-        speakLines([
-            { text: textAreaOne.value, el: textAreaOne, words: false },
-            { text: textAreaTwo.value, el: textAreaTwo, words: false },
-            { text: textAreaThree.value, el: textAreaThree, words: false },
-        ]);
-    });
-
-    const loadSpeakerButton = document.getElementById('loadSpeakerButton');
-    loadSpeakerButton.addEventListener('click', function () {
-        speakLines([
-            { text: loadAreaOne.textContent, el: loadAreaOne, words: true },
-            { text: loadAreaTwo.textContent, el: loadAreaTwo, words: true },
-            { text: loadAreaThree.textContent, el: loadAreaThree, words: true },
-        ]);
-    });
-
-    const generateSpeakerButton = document.getElementById('generateSpeakerButton');
-    generateSpeakerButton.addEventListener('click', function () {
-        speakLines([
-            { text: generateAreaOne.textContent, el: generateAreaOne, words: true },
-            { text: generateAreaTwo.textContent, el: generateAreaTwo, words: true },
-            { text: generateAreaThree.textContent, el: generateAreaThree, words: true },
-        ]);
-    });
-    // ^^^^^^^^^ TEXT TO SPEECH CODE ^^^^^^^^^^
-
-
-
-    const successPopup = document.getElementById('successPopup');
-    const popupClose = document.getElementById('popupClose');
-
-    function showSuccessPopup() {
-        successPopup.classList.add('show');
-    }
-
-    // VVVVVVVVV CUSTOM CONFIRM MODAL CODE VVVVVVVVV
-    const confirmModal = document.getElementById('confirmModal');
-    const confirmMessage = document.getElementById('confirmMessage');
-    const confirmYesButton = document.getElementById('confirmYesButton');
-    const confirmNoButton = document.getElementById('confirmNoButton');
-
-    // shows the modal with the given message and resolves true/false based on
-    // which button (or the overlay, treated as cancel) the user clicks
-    function showConfirm(message) {
-        return new Promise(function (resolve) {
-            confirmMessage.textContent = message;
-            confirmModal.classList.remove('hidden');
-
-            function cleanup(result) {
-                confirmModal.classList.add('hidden');
-                confirmYesButton.removeEventListener('click', onYes);
-                confirmNoButton.removeEventListener('click', onNo);
-                confirmModal.removeEventListener('click', onOverlayClick);
-                resolve(result);
-            }
-            function onYes() { cleanup(true); }
-            function onNo() { cleanup(false); }
-            function onOverlayClick(e) {
-                if (e.target === confirmModal) cleanup(false);
-            }
-
-            confirmYesButton.addEventListener('click', onYes);
-            confirmNoButton.addEventListener('click', onNo);
-            confirmModal.addEventListener('click', onOverlayClick);
-        });
-    }
-    // ^^^^^^^^^ CUSTOM CONFIRM MODAL CODE ^^^^^^^^^^
-
-    popupClose.addEventListener('click', function () {
-        successPopup.classList.remove('show');
-    });
-</script>
+<script type="module" src="/main.js"></script>
 </body>
 </html>

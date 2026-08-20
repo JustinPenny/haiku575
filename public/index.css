@@ -119,7 +119,9 @@ button {
     height: auto;
     font-size: small;
     padding: 4px 10px;
+}
 
+.destructive {
     border-color: rgb(255, 90, 90);
     color: rgb(255, 90, 90);
 }
@@ -303,11 +305,6 @@ button {
 .modalBox span {
     display: flex;
     gap: 10px;
-}
-
-.modalConfirmButton {
-    border-color: rgb(255, 90, 90);
-    color: rgb(255, 90, 90);
 }
 
 @media (max-width: 600px) {
