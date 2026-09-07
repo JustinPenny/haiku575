@@ -1,0 +1,17 @@
+name: Deploy to Pi
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    steps:
+      - name: Pull latest and restart
+        run: |
+          cd /home/jpenny/haiku575
+          git fetch origin main
+          git reset --hard origin/main
+          npm install
+          sudo systemctl restart haiku575
