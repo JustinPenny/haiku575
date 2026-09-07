@@ -50,6 +50,12 @@ legend {
     width: fit-content;
 }
 
+.legendRow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
 fieldset {
     display: flex;
     flex-direction: column;
@@ -128,10 +134,6 @@ button {
 }
 
 .speakerButton {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-
     width: auto;
     height: auto;
 
@@ -142,6 +144,7 @@ button {
     display: flex;
     align-items: center;
     justify-content: center;
+    flex-shrink: 0;
 
     transition: opacity 0.2s ease;
 }

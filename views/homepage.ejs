@@ -67,10 +67,14 @@
                     <%}) %>
                 </div>
                 <fieldset>
-                    <button id="writeSpeakerButton" type="button" class="speakerButton" aria-label="Read haiku aloud">
-                        <%- include('partials/speaker-icon') %>
-                    </button>
-                    <legend> Write A Haiku</legend>
+                    <legend>
+                        <span class="legendRow">
+                            Write A Haiku
+                            <button id="writeSpeakerButton" type="button" class="speakerButton" aria-label="Read haiku aloud">
+                                <%- include('partials/speaker-icon') %>
+                            </button>
+                        </span>
+                    </legend>
 
                         <textarea id="firstLine"  placeholder="Write some words in" spellcheck="true" name="lineOne"></textarea>
                         <span class="lineCheck" id="firstLineCount">0/5</span>
@@ -99,10 +103,14 @@
 
         <div class="section" id="loadSection">
             <fieldset>
-                <button id="loadSpeakerButton" type="button" class="speakerButton" aria-label="Read haiku aloud">
-                    <%- include('partials/speaker-icon') %>
-                </button>
-                <legend>Load A Haiku</legend>
+                <legend>
+                    <span class="legendRow">
+                        Load A Haiku
+                        <button id="loadSpeakerButton" type="button" class="speakerButton" aria-label="Read haiku aloud">
+                            <%- include('partials/speaker-icon') %>
+                        </button>
+                    </span>
+                </legend>
                 <div id="loadErrors"></div>
                 <blockquote id="loadHaiku" class="haikuDisplay hidden" data-haiku-id="">
                     <p class="haikuLine" id="loadLineOne"></p>
@@ -124,10 +132,14 @@
 
         <div class="section" id="generateSection">
             <fieldset>
-                <button id="generateSpeakerButton" type="button" class="speakerButton" aria-label="Read haiku aloud">
-                    <%- include('partials/speaker-icon') %>
-                </button>
-                <legend>Generate A Haiku</legend>
+                <legend>
+                    <span class="legendRow">
+                        Generate A Haiku
+                        <button id="generateSpeakerButton" type="button" class="speakerButton" aria-label="Read haiku aloud">
+                            <%- include('partials/speaker-icon') %>
+                        </button>
+                    </span>
+                </legend>
                 <div id="generateErrors"></div>
                 <blockquote id="generatedHaiku" class="haikuDisplay hidden">
                     <p class="haikuLine" id="generateLineOne"></p>
