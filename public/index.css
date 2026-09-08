@@ -118,14 +118,18 @@ button {
 }
 
 .deleteButton {
-    position: absolute;
-    bottom: 8px;
-    right: 8px;
-
     width: auto;
     height: auto;
+    min-width: 0;
     font-size: small;
     padding: 4px 10px;
+    align-self: center;
+}
+
+.buttonRow {
+    display: flex;
+    align-items: center;
+    gap: 15px;
 }
 
 .destructive {
