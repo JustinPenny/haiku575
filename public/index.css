@@ -313,7 +313,8 @@ button {
 
 @media (max-width: 600px) {
     div.section {
-        padding-left: 4vw;
+        padding-left: 2vw;
+        padding-right: 2vw;
         padding-bottom: 6vh;
     }
 
